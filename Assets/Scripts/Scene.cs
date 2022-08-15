@@ -35,13 +35,52 @@ public class Scene : MonoBehaviour
 
         // Image plane "corner" rays first (frustum edges).
         this.debug.Ray(new Ray(Vector3.zero, NormalizedImageToWorldCoord(0f, 0f)), Color.blue);
-        
+
         // Add more rays to visualise here...
+        this.debug.Ray(new Ray(Vector3.zero, NormalizedImageToWorldCoord(0f, 1f)), Color.blue);
+        this.debug.Ray(new Ray(Vector3.zero, NormalizedImageToWorldCoord(1f, 0f)), Color.blue);
+        this.debug.Ray(new Ray(Vector3.zero, NormalizedImageToWorldCoord(1f, 1f)), Color.blue);
+
+        // fire debug rays
+        for (int x = 0; x < this.image.Width; x++)
+        {
+            for (int y = 0; y < this.image.Height; y++)
+            {
+                this.debug.Ray(fireNormRay(x, y), Color.white);
+            }
+        }
+        
+    }
+
+    private Ray fireNormRay(int x, int y)
+    {
+        var normX = (x + 0.5f) / this.image.Width;
+        var normY = (y + 0.5f) / this.image.Height;
+        var normRay = NormalizedImageToWorldCoord(normX, normY);
+        return new Ray(Vector3.zero, normRay);
     }
 
     private void Render()
     {
         // Render the image here...
+        for (int x = 0; x < this.image.Width; x++)
+        {
+            for (int y = 0; y < this.image.Height; y++)
+            {
+                // fallback black (no intersection)
+                this.image.SetPixel(x, y, Color.black);
+
+                // loop through all entities and find intersection with the ray
+                foreach (var sceneEntity in FindObjectsOfType<SceneEntity>())
+                {
+                    if (sceneEntity.Intersect(fireNormRay(x, y)) != null)
+                    {
+                        this.image.SetPixel(x, y, sceneEntity.Color());
+                    }
+                }
+               
+            }
+        }
     }
 
     private Vector3 NormalizedImageToWorldCoord(float x, float y)
